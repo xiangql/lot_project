@@ -123,8 +123,7 @@ int add_lottery(lotNode *pHlot)
 
     newNode->pNext = pHlot->pNext;
     pHlot->pNext = newNode;
-    lotInfoWriteToFile(pHlot,FILENAME);
-    newNode = NULL;
+    newNode = NULL; 
     return 1;
 }
 /*************************************************************
@@ -157,7 +156,6 @@ int del_lotNode(lotNode *pHlot)
         printf("无此相关信息\n");
         return 0; //未找到匹配项
     }
-    lotInfoWriteToFile(pHlot,FILENAME);
     return 1;
 }
 /***************************************************
@@ -182,7 +180,6 @@ int search_lotID(lotNode *pHlot)
         printf("无彩票信息，请先添加\n");
         return 0;
     }
-    anyKey();
     int lotID = set_lotID();
     lotNode *temp = pHlot->pNext;
     while(NULL != temp){
@@ -229,7 +226,6 @@ int sort_lotID(lotNode *pHlot)
         }
         temp = temp->pNext;
     }
-    lotInfoWriteToFile(pHlot,FILENAME);
     return 1;
 }
 /**********************************************************
@@ -325,12 +321,11 @@ void clear_past_lotNode(lotNode *pHlot)
         if(pCur->data.state[0] == false){
             pPre->pNext = pCur->pNext;
             free(pCur);
-            pCur = pPre->pNext;
+            pCur = NULL;
         }
+        pCur = pPre->pNext; 
         pPre = pPre->pNext;
-        pCur = pPre->pNext;
     }
-    lotInfoWriteToFile(pHlot,FILENAME);
     return;
 }
 
@@ -376,13 +371,16 @@ int check_userID(userNode *pHuser,char *userID)
 void init_userInfo(userNode *pHuser,userInfo *temp)
 {
     printf("\n============完善用户信息===============\n");
-    set_userID(temp->userID);//需要检查账户的唯一性
+    //需要检查账户的唯一性
+    printf("注意ID确认后无法更改,请认真填写\n");
+    set_userID(temp->userID);
     if(!check_userID(pHuser,temp->userID)){
         printf("次账户已存在，请重新录入\n");
         sleep(1);
         init_userInfo(pHuser,temp);
         return;
     }
+    //strcpy(temp->userID,userID);
     set_name(temp->name);
     set_userPwd(temp->userPwd);
     printf("初始余额为零，请注意充值\n");
@@ -454,25 +452,29 @@ void show_userInfo(userNode *temp)
     return;
 }
 /**************************************************
- * 购买彩票信息打印
+ * 用户端口显示彩票信息,将开奖彩票进行隐藏显示
  *************************************************/
-#if 0
-void show_buy_lotInfo(lotNode *pFrist)
+
+void show_lotInfo_user(lotNode *pFrist)
 {
-    show_lotInfo(pFrist);
+    printf("编号\t类型\t单价\t数量\t状态\t发布时间\t开奖时间\n");
+    lotNode *temp = pFrist->pNext;
+    while(NULL != temp){
+        if(temp->data.state[0] == true)
+            print_lotInfo(temp->data);
+        temp = temp->pNext;
+    }
     return;
 }
-#endif
+
 /**************************************************
 *购买彩票并改变用户余额
 *改变彩票的被够数量
 ****************************************************/
 
-void buy_lottory(userNode *pUser)
+int buy_lottory(userNode *pUser,lotNode *pFrist)
 {
     lotNode *pHlot = lotInfoReadFromFile(FILENAME);
-    lotNode *pFrist = pUser->data.pFrist;
-    pFrist = lotInfoReadFromFile(pUser->data.filename);
     lotNode *temp = pHlot->pNext;
     int lotID = set_lotID();
     int counted = set_counted();
@@ -480,27 +482,37 @@ void buy_lottory(userNode *pUser)
     {
         if(lotID == temp->data.lotID)
         {
+            if(temp->data.price*counted > pUser->data.balance){
+                printf("余额不足,请先充值\n");
+                return 0;
+            }
+            if(temp->data.state[0] == false)
+            {
+                printf("此ID彩票已开奖,请重新购买\n");
+                return 0;
+            }
             lotNode *newNode = make_lotNode();
             newNode->data = temp->data;
             newNode->data.counted = counted;
             temp->data.counted += counted;
             pUser->data.balance -= temp->data.price*counted;
-
+            
             newNode->pNext = pFrist->pNext;
             pFrist->pNext = newNode;
             newNode = NULL;
             lotInfoWriteToFile(pHlot,FILENAME);
-            lotInfoWriteToFile(pFrist,pUser->data.filename);
-            return;
+            return 1;
         }
         temp = temp->pNext;
     }
-    return;
+    if(temp == NULL)
+        printf("此ID彩票不存在,请确认ID正确\n");
+    return 0;
 }
 /****************************************************
-*根据头指针显示彩票信息
+*根据头指针显示购买彩票信息
 *****************************************************/
-void show_lotInfo(lotNode *pHlot)
+void show_buy_lotInfo(lotNode *pHlot)
 {
     if(NULL == pHlot || NULL == pHlot->pNext){
         printf("the link is empty!\n");
@@ -531,7 +543,10 @@ int correct_userInfo(userNode *pHuser,userNode *pUser)
     char userPwd[SIZE] = "";
     set_userPwd(userPwd);
     if(!strcmp(userPwd,pUser->data.userPwd)){
-        init_userInfo(pHuser,&pUser->data);
+    //    init_userInfo(pHuser,&pUser->data);调用会使余额归零
+    //    set_userID(pUser->userID); 更改会造成文件名与用户ID不匹配
+        set_name(pUser->name);
+        set_userPwd(pUser->userPwd);
     }
     else
         printf("请确认密码正确才允许修改数据\n");
@@ -548,8 +563,8 @@ int del_user(userNode *phUser,userNode *pUser)
         if(strcmp(pCur->data.userID,pUser->data.userID)){
             //销毁用户彩票链表
             pPre->pNext = pCur->pNext;
-            lotNode *pHbuy = pUser->data.pFrist;
             destory_lotInfo(pUser->data.pFrist);
+           lotInfoWriteToFile(pUser->data.pFrist,pUser->data.filename);
             return 1;
         }
         pPre = pPre->pNext;

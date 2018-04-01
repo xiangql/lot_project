@@ -38,28 +38,41 @@ int adminFunc(adminNode *pHadmin,adminNode *pAdmin)
     system("clear");
     printf("\t\t管理员: %s \n\n",pAdmin->data.name);
     adminUI();
-    switch(myGetc())
+    char ch = myGetc();
+    lotNode *pHlot = lotInfoReadFromFile(FILENAME);//读取所需文件信息，保证操作的为最新数据
+    switch(ch)
     {   
-        lotNode *pHlot = lotInfoReadFromFile(FILENAME);
-        //读取所需文件信息，保证操作的为最新数据
         case '1':   //彩票发布
         {
-            add_lottery(pHlot);
+            if(add_lottery(pHlot))
+                printf("彩票发布成功,请点击查询查看\n");
+            else
+                printf("发布失败,请重新发布\n");
+            lotInfoWriteToFile(pHlot,FILENAME);
             break;
         }
         case '2':   //根据lotID删除彩票
         {
-            del_lotNode(pHlot);
+            if(del_lotNode(pHlot))
+                printf("删除成功\n");
+            else
+                printf("删除失败,请重新操作\n");
+            lotInfoWriteToFile(pHlot,FILENAME);
             break;
         }
         case '3':   //查询彩票信息－－＞ＩＤ查询/全部显示
         {
             search_lotID(pHlot);
+            anyKey();
             break;
         }
         case '4':   //根据lotID排序
         {
-            sort_lotID(pHlot);
+            if(sort_lotID(pHlot))
+                printf("排序成功\n");
+            else
+                printf("排序失败\n");
+            lotInfoWriteToFile(pHlot,FILENAME);
             break;
         }
         case '5':   //彩票开奖
@@ -70,6 +83,7 @@ int adminFunc(adminNode *pHadmin,adminNode *pAdmin)
         case '6':   //清空开奖彩票
         {
             clear_past_lotNode(pHlot);
+            lotInfoWriteToFile(pHlot,FILENAME);
             break;
         }
         case '7':   //注销用户
@@ -83,7 +97,7 @@ int adminFunc(adminNode *pHadmin,adminNode *pAdmin)
             destory_adminInfo(pHadmin);
             destory_lotInfo(pHlot);
             return 0;
-        }
+        } 
     }
     anyKey();
     return 1;

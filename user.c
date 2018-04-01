@@ -32,6 +32,7 @@ int userFunc(userNode *pHuser,userNode *pUser)
     char ch = myGetc(); 
     lotNode *pHlot = lotInfoReadFromFile(FILENAME);
     reloadNode(pUser);
+    lotNode *pFrist = lotInfoReadFromFile(pUser->data.filename);
     switch(ch)
     {
         case '1':   //查询个人信息
@@ -41,18 +42,21 @@ int userFunc(userNode *pHuser,userNode *pUser)
         }
         case '2':   //显示购彩记录
         {
-            show_lotInfo(pUser->data.pFrist);
+            show_lotInfo_user(pFrist);
             break;
         }
-        case '3':   //查看彩票
+        case '3':   //查看彩票,将以开奖彩票隐藏
         {
-            show_lotInfo(pHlot);
+            show_buy_lotInfo(pHlot);
             break;
         }
         case '4':   //购买彩票
         {
-            buy_lottory(pUser);
-            userInfoWriteToFile(pHuser);
+            if(buy_lottory(pUser,pFrist))
+            {
+                lotInfoWriteToFile(pFrist,pUser->data.filename);
+                userInfoWriteToFile(pHuser);
+            }
             break;
         }
           case '5':   //账户充值
@@ -64,15 +68,16 @@ int userFunc(userNode *pHuser,userNode *pUser)
         case '6':   //清空开奖彩票
         {
             clear_past_lotNode(pUser->data.pFrist);
+             lotInfoWriteToFile(pHlot,FILENAME);
             break;
         }
-        case '8':   //修改用户信息
+        case '7':   //修改用户信息
         {
             correct_userInfo(pHuser,pUser);
             userInfoWriteToFile(pHuser);
             break;
         }
-        case '7':   //注销用户
+        case '8':   //注销用户
         {
             del_user(pHuser,pUser);
             userInfoWriteToFile(pHuser);

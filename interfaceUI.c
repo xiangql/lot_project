@@ -24,7 +24,8 @@ void userUI()
     printf("\t4.选购彩票\n");
     printf("\t5.账户充值\n");
     printf("\t6.用户注销\n");
-    printf("\t7.清空开奖彩票\n");
+    printf("\t7.修改用户信息\n");
+    printf("\t8.清空开奖彩票\n");
     printf("\t0.退出\n");
     printf("**************************\n");
     printf("input choice:");
