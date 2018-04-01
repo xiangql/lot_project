@@ -1,6 +1,4 @@
 #include "./public.h"
-#include "./list.h"
-
 char *myGets(char *src, int size)
 {
     char *dest = src;
@@ -17,86 +15,6 @@ char *myGets(char *src, int size)
         while(getchar() != '\n');
     *dest = '\0';
     return src;
-}
-
-int initTime(Times *times)
-{
-    printf("输入年份:");
-    scanf("%d",&times->year);
-    getchar();
-    if(1 > times->year)
-        return 0;
-    printf("输入月份:");
-    scanf("%d",&times->month);
-    getchar();
-    if(0 > times->month || 12 < times->month)
-        return 0;
-    printf("输入日期:");
-    scanf("%d",&times->day);
-    getchar();
-    if(0 > times->day || 31 < times->day)
-        return 0;
-    return 1;
-}
-
-void setTime(Times *times)
-{
-    while(!initTime(times))
-        printf("\n时间输入错误，请重新输入\n");
-    return;
-}
-
-void putTime(Times times)
-{
-    printf("\t%d年%d月%d号",times.year,times.month,times.day);
-    return;
-}
-
-int setInt()
-{
-    int num = 0;
-    scanf("%d",&num);
-    getchar();
-    return num;
-}
-int setIntID()
-{
-    printf("ID: ");
-    int ID = setInt();
-    return ID;
-}
-int setAccount()
-{
-
-    printf("账户：");
-    int account = setInt();
-    return account;
-}
-int setIntPwd()
-{
-    printf("密码:");
-    int pwd = setInt();
-    return pwd;
-}
-
-int setNum()
-{
-    printf("购买数量：");
-    int num = setInt();
-    return num;
-
-}
-char * setName()
-{
-    char str[SIZE] = "";
-    printf("用户名:");
-    return myGets(str,SIZE);
-}
-int setMoney()
-{
-    printf("设置金额:");
-    int money = setInt();
-    return money;
 }
 char myGetc()   //只获取一个字符
 {
@@ -123,6 +41,71 @@ void printState(bool a,int b)   //彩票的几种状态的打印方式
         printf("true ");
     return;
 }
+int set_adminID()
+{
+    printf("管理员ID:");
+    int adminID = 0;
+    scanf("%d",&adminID);
+    return adminID;
+}
+int set_adminPwd()
+{
+    printf("密码:");
+    int adminPwd = 0;
+    scanf("%d",&adminPwd);
+    return adminPwd;
+}
+int set_lotID()
+{
+    printf("彩票ID:");
+    int lotID = 0;
+    scanf("%d",&lotID);
+    return lotID;
+}
+void set_name(char *name)
+{
+    printf("用户名:");
+    myGets(name,SIZE);
+    return;
+}
+void set_userID(char *userID)
+{
+    printf("ID:");
+    myGets(userID,SIZE);
+    return;
+}
+void set_userPwd(char *userPwd)
+{
+    printf("密码:");
+    myGets(userPwd,SIZE);
+    return;
+}
+char *set_filename(char *filename,char *userID)
+{
+    strcat(filename,"./user/");
+    strcat(filename,userID);
+    strcat(filename,".dat");
+    return filename;
+}
+int set_money()
+{
+    int money = 0;
+    printf("输入金额:");
+    scanf("%d",&money);
+    return money;
+}
+
+int set_counted()
+{
+    printf("输入购买数量:");
+    int counted = 0;
+    scanf("%d",&counted);
+    return counted;
+}
+
+
+
+
 
 
 

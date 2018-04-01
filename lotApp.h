@@ -7,6 +7,6 @@
 
 int getLogo(void);
 int choice_func();
-void main_func();
+int main_func();
 
 #endif

@@ -3,7 +3,6 @@
 void adminUI()
 {
     printf("************************\n");
-    printf("\033[47;31m\033[5m");
     printf("\t1.彩票发布\t\n");
     printf("\t2.删除彩票\t\n");
     printf("\t3.查询信息\t\n");
@@ -12,7 +11,6 @@ void adminUI()
     printf("\t6.清空开奖彩票\n");
     printf("\t0.退　出\t\n");
     printf("************************\n");
-    printf("\033[0m");
     printf("input choice:");
     return;
 }
@@ -20,7 +18,6 @@ void adminUI()
 void userUI()
 {
     printf("***************************\n");
-    printf("\033[47;31m\033[5m");
     printf("\t1.个人信息\n");
     printf("\t2.购彩记录\n");
     printf("\t3.显示彩票信息\n");
@@ -29,7 +26,6 @@ void userUI()
     printf("\t6.用户注销\n");
     printf("\t7.清空开奖彩票\n");
     printf("\t0.退出\n");
-    printf("\033[0m");
     printf("**************************\n");
     printf("input choice:");
     return;
@@ -37,11 +33,10 @@ void userUI()
 
 int loginUI()
 {
-    printf("*********************");
-    printf("\033[47;31m\033[5m");
+    printf("*********************\n");
     printf("\t1.注册\n\n");
     printf("\t2.登录\n\n");
-    printf("\033[0m");
+    printf("\t0.退出\n");
     printf("*********************\n");
     printf("input choice:");
     return 0;

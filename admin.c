@@ -33,14 +33,14 @@ adminNode *login_admin(adminNode *pHadmin)      //成功返回当前用户节点
 *管理员登录成功载入此操作界面
 *实现管理员的所有功能模块
 ******************************************************************/
-void adminFunc(adminNode *pAdmin)
+int adminFunc(adminNode *pHadmin,adminNode *pAdmin)
 {
     system("clear");
     printf("\t\t管理员: %s \n\n",pAdmin->data.name);
     adminUI();
     switch(myGetc())
     {   
-        lotNode *pHlot = lotInfoReadFromFile();
+        lotNode *pHlot = lotInfoReadFromFile(FILENAME);
         //读取所需文件信息，保证操作的为最新数据
         case '1':   //彩票发布
         {
@@ -54,7 +54,7 @@ void adminFunc(adminNode *pAdmin)
         }
         case '3':   //查询彩票信息－－＞ＩＤ查询/全部显示
         {
-            search_lotInfo(pHlot);
+            search_lotID(pHlot);
             break;
         }
         case '4':   //根据lotID排序
@@ -64,21 +64,24 @@ void adminFunc(adminNode *pAdmin)
         }
         case '5':   //彩票开奖
         {
-
+            show_Win_lotInfo(pHlot);
             break;
         }
         case '6':   //清空开奖彩票
         {
-            clear_past_lotInfo(pHlot);
+            clear_past_lotNode(pHlot);
             break;
         }
         case '7':   //注销用户
         {
             del_admin(pHadmin,pAdmin);
+            anyKey();
+            return 0;
         }
         case '0':   //退出　销毁链表
         {
-
+            destory_adminInfo(pHadmin);
+            destory_lotInfo(pHlot);
             return 0;
         }
     }

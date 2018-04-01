@@ -20,15 +20,15 @@ int check_adminID(adminNode *pHadmin,int adminID)
 void init_adminInfo(adminNode *pHadmin,adminInfo *pAdmin)
 {
     printf("============完善以下信息============\n");
-    pAdmin->adminID = setIntID();
-    if(check_adminID(pHadmin,pAdmin->adminID))
+    pAdmin->adminID = set_adminID();
+    if(!check_adminID(pHadmin,pAdmin->adminID))
     {
         printf("ID 已被占用,请重新录入\n");
-        init_admin(pHadmin,pAdmin);
+        init_adminInfo(pHadmin,pAdmin);
         return;
     }
-    pAdmin->pwd = set_adminPwd();
-    pAdmin->name = setName();
+    pAdmin->adminPwd = set_adminPwd();
+    set_name(pAdmin->name);
 }
 int add_admin(adminNode *pHadmin)
 {
@@ -36,10 +36,12 @@ int add_admin(adminNode *pHadmin)
         printf("%s the link is empty!\n",__func__);
         return -1;
     }
-    adminNode newNode = make_adminNode();
+    adminNode *newNode = make_adminNode();
     init_adminInfo(pHadmin,&newNode->data);
     newNode->pNext = pHadmin->pNext;
     pHadmin->pNext = newNode;
+    if(pHadmin == NULL)
+        printf("dafsdfa");
     adminInfoWriteToFile(pHadmin);
     newNode = NULL;
     return 1;
@@ -85,19 +87,21 @@ int check_lotID(lotNode *pHlot,int lotID)
 void init_lotInfo(lotNode *pHlot,lotInfo *temp)
 {
     printf("\n=============彩票信息添加===============\n");
-    temp->ID = setIntID();
-    if(!check_lotID(pHead,temp->lotID)){
+    temp->lotID = set_lotID();
+    if(!check_lotID(pHlot,temp->lotID)){
         printf("此ID已占用，请重新录入\n");
-        initLotInfo(pHlot,temp);
+        init_lotInfo(pHlot,temp);
         return;
     }
+    printf("名字：");
+    myGets(temp->lotname,SIZE);
     printf("类型：");
     myGets(temp->type,SIZE);
     printf("单价：");
     scanf("%f",&temp->price);
     getchar();
     //购买数量初始化为零
-    temp->num = 0;
+    temp->counted = 0;
     temp->state[0] = true;      //初始化状态为未开奖
     temp->state[1] = 0;         //中奖金额初始化为零
     printf("发布时间：\n");
@@ -109,7 +113,7 @@ void init_lotInfo(lotNode *pHlot,lotInfo *temp)
 
 int add_lottery(lotNode *pHlot)
 {
-    if(NULL == pHlot{
+    if(NULL == pHlot){
         printf("\n\t%s:the link is empty!\n",__func__);
         return -1;
     }
@@ -119,7 +123,7 @@ int add_lottery(lotNode *pHlot)
 
     newNode->pNext = pHlot->pNext;
     pHlot->pNext = newNode;
-    lotInfoWriteToFile(pHlot);
+    lotInfoWriteToFile(pHlot,FILENAME);
     newNode = NULL;
     return 1;
 }
@@ -132,7 +136,7 @@ int del_lotNode(lotNode *pHlot)
         printf("无彩票信息，请先添加\n");
         return -1;
     }
-    int lotID = setIntID();
+    int lotID = set_lotID();
     lotNode *pPre = pHlot;
     lotNode *pCur = pHlot->pNext;
 
@@ -153,7 +157,7 @@ int del_lotNode(lotNode *pHlot)
         printf("无此相关信息\n");
         return 0; //未找到匹配项
     }
-    lotInfoWriteToFile(pHlot);
+    lotInfoWriteToFile(pHlot,FILENAME);
     return 1;
 }
 /***************************************************
@@ -166,9 +170,9 @@ void print_lotInfo(lotInfo temp)
             temp.lotID,
             temp.type,
             temp.price,
-            temp.num);
+            temp.counted);
     printState(temp.state[0],temp.state[1]);
-    printf("\t%s\t%s\n",temp->star,temp->last);
+    printf("\t%s\t%s\n",temp.star,temp.last);
     return;
 }
 
@@ -178,19 +182,21 @@ int search_lotID(lotNode *pHlot)
         printf("无彩票信息，请先添加\n");
         return 0;
     }
-    int lotID = setID();
-    lotNode *pCur = pHlot->pNext;
-    while(NULL != pCur){
-        if(lotID == pCur->data.lotID){
+    anyKey();
+    int lotID = set_lotID();
+    lotNode *temp = pHlot->pNext;
+    while(NULL != temp){
+        if(lotID == temp->data.lotID){
             printf("编号\t类型\t单价\t数量\t状态\t发布时间\t开奖时间\n");
-            print_lotInfo(pCur->data);
+            print_lotInfo(temp->data);
             return 1;
         }
-        pCur = pCur->pNext;
+        temp = temp->pNext;
     }
-    if(NULL == pCur){
+    if(NULL == temp){
         return 0;   //没有相关信息
     }
+    anyKey();
     return 1;
 }
 /****************************************************
@@ -223,7 +229,7 @@ int sort_lotID(lotNode *pHlot)
         }
         temp = temp->pNext;
     }
-    lotInfoWriteToFile(pHlot);
+    lotInfoWriteToFile(pHlot,FILENAME);
     return 1;
 }
 /**********************************************************
@@ -244,7 +250,6 @@ int num_range(lotNode *pHlot)
     }
     return num;
 }
-
 int get_WinID(lotNode *pHlot,int money)
 {
     if(NULL == pHlot || NULL == pHlot->pNext){
@@ -263,24 +268,44 @@ int get_WinID(lotNode *pHlot,int money)
     }
     p->data.state[0] = false;
     p->data.state[1] = money;
-    show_lotInfo(p->data);
+    print_lotInfo(p->data);
     int lotID = p->data.lotID;
     p = NULL;
+    lotInfoWriteToFile(pHlot,FILENAME);
     return lotID;
 }
 
 void update(int lotID,int money,userNode *pHuser)
 {
-   
+    if(NULL == pHuser){
+        printf("%s the link is empty!",__func__);
+        return;
+    }
+    userNode *temp = pHuser->pNext;
+    while(NULL != temp)
+    {
+        lotNode *pHbuy = temp->data.pFrist;
+        lotNode *loop = pHbuy->pNext;
+        while(NULL != loop)
+        {
+            if(loop->data.lotID == lotID)
+            {
+                temp->data.balance += (loop->data.counted*money);
+            }
+            loop = loop->pNext;
+        }
+        lotInfoWriteToFile(temp->data.pFrist,temp->data.filename);
+        temp = temp->pNext;
+    }
+    userInfoWriteToFile(pHuser);
     return;
 }
-void showWinLotInfo(lotNode *phLot)
+void show_Win_lotInfo(lotNode *pHlot)
 {
-    int money = setMoney();
-    int lotID = getWinID(pHlot,money);
+    int money = set_money();
+    int lotID = get_WinID(pHlot,money);
     userNode *pHuser = userInfoReadFromFile();
-    update(ID,money,pHuser,);
-    userInfoWriteToFile(pHuser);
+    update(lotID,money,pHuser);
     return;
 }
 
@@ -300,19 +325,19 @@ void clear_past_lotNode(lotNode *pHlot)
         if(pCur->data.state[0] == false){
             pPre->pNext = pCur->pNext;
             free(pCur);
-            pCur = NULL;
+            pCur = pPre->pNext;
         }
         pPre = pPre->pNext;
         pCur = pPre->pNext;
     }
-    lotInfoWriteToFile(pHlot);
+    lotInfoWriteToFile(pHlot,FILENAME);
     return;
 }
 
 /**************************************************************
 *注销当前用户，且更新文件信息
 ****************************************************************/
-void del_admin(adminNode pHadmin,adminNode *pAdmin)
+void del_admin(adminNode *pHadmin,adminNode *pAdmin)
 {
     adminNode *pPre = pHadmin;
     adminNode *pCur = pHadmin->pNext;
@@ -324,9 +349,9 @@ void del_admin(adminNode pHadmin,adminNode *pAdmin)
             free(pCur);
             pCur = NULL;
         }
-        pCur = pCur->pNext;
+        pCur = pPre->pNext;
         pPre = pPre->pNext;
-    }
+    } 
     adminInfoWriteToFile(pHadmin);
     return;
 }
@@ -351,29 +376,27 @@ int check_userID(userNode *pHuser,char *userID)
 void init_userInfo(userNode *pHuser,userInfo *temp)
 {
     printf("\n============完善用户信息===============\n");
-    temp->userID = set_userID();//需要检查账户的唯一性
+    set_userID(temp->userID);//需要检查账户的唯一性
     if(!check_userID(pHuser,temp->userID)){
         printf("次账户已存在，请重新录入\n");
         sleep(1);
-        initUserInfo(pHuser,temp);
+        init_userInfo(pHuser,temp);
         return;
     }
-    setName(temp->name);
-    temp->userPwd = set_userPwd();
+    set_name(temp->name);
+    set_userPwd(temp->userPwd);
     printf("初始余额为零，请注意充值\n");
     temp->balance = 0;  //初始化账户余额为0
-    temp->data.filename = "./user/";
-    strcat(temp->data.filename,temp->data.userID);
-    strcat(temp->data.filename,".dat");
+    set_filename(temp->filename,temp->userID);
+    temp->pFrist = make_lotNode();
     return;
 }
-int add_user(userNode * pHuser)
+int add_user(userNode *pHuser)
 {
     if(NULL == pHuser){
         printf("\n\t%s:the link is empty!\n",__func__);
         return 0;
     }
-
     userNode *newNode = make_userNode();
     init_userInfo(pHuser,&newNode->data);
 
@@ -391,12 +414,13 @@ userNode *user_login(userNode *pHuser)
 {
     if(NULL == pHuser){
         printf("%s the link is empty!\n",__func__);
-        return;
+        return NULL;
     }
     userNode *temp = pHuser->pNext;
-    char userID = set_userID();
-    char userPwd = set_userPwd();
-    userNode *temp = pHuser->pNext;
+    char userID[SIZE] = "";
+    set_userID(userID);
+    char userPwd[SIZE] = "";
+    set_userPwd(userPwd);
     while(NULL != temp)
     {
         if(!strcmp(userID,temp->data.userID) && !strcmp(userPwd,temp->data.userPwd))
@@ -408,12 +432,12 @@ userNode *user_login(userNode *pHuser)
 /************************************************
 *用户重定位
 *************************************************/
-userNode reload_user(userNode *pHuser,userNode *pUser)
+userNode *reloadNode(userNode *pUser)
 {
     userNode *pHuser = userInfoReadFromFile();
     userNode *temp = pHuser->pNext;
     while(NULL != temp){
-        if(pUser->data.userID == temp->data.userID)
+        if(!strcmp(pUser->data.userID,temp->data.userID))
             pUser->data.balance = temp->data.balance;
             temp = temp->pNext;
     }
@@ -430,34 +454,59 @@ void show_userInfo(userNode *temp)
     return;
 }
 /**************************************************
+ * 购买彩票信息打印
+ *************************************************/
+#if 0
+void show_buy_lotInfo(lotNode *pFrist)
+{
+    show_lotInfo(pFrist);
+    return;
+}
+#endif
+/**************************************************
 *购买彩票并改变用户余额
 *改变彩票的被够数量
 ****************************************************/
-void buy_lotInfo(lotNode *pHbuy,lotNode pHlot)
+
+void buy_lottory(userNode *pUser)
 {
-    int lotID = set_lotID();
-    int count = set_count();
+    lotNode *pHlot = lotInfoReadFromFile(FILENAME);
+    lotNode *pFrist = pUser->data.pFrist;
+    pFrist = lotInfoReadFromFile(pUser->data.filename);
     lotNode *temp = pHlot->pNext;
+    int lotID = set_lotID();
+    int counted = set_counted();
     while(NULL != temp)
     {
         if(lotID == temp->data.lotID)
         {
-            temp->pNext = pHbuy
-            pHbuy-
+            lotNode *newNode = make_lotNode();
+            newNode->data = temp->data;
+            newNode->data.counted = counted;
+            temp->data.counted += counted;
+            pUser->data.balance -= temp->data.price*counted;
+
+            newNode->pNext = pFrist->pNext;
+            pFrist->pNext = newNode;
+            newNode = NULL;
+            lotInfoWriteToFile(pHlot,FILENAME);
+            lotInfoWriteToFile(pFrist,pUser->data.filename);
+            return;
         }
+        temp = temp->pNext;
     }
     return;
 }
 /****************************************************
 *根据头指针显示彩票信息
 *****************************************************/
-void show_lotInfo(lotNode *phLot)
+void show_lotInfo(lotNode *pHlot)
 {
-    if(NULL == phLot || NULL == phLot->pNext){
+    if(NULL == pHlot || NULL == pHlot->pNext){
         printf("the link is empty!\n");
         return;
     }
-    lotNode *temp = phLot->pNext;
+    lotNode *temp = pHlot->pNext;
     printf("编号\t类型\t单价\t数量\t状态\t发布时间\t开奖时间\n");
     while(NULL != temp){
         print_lotInfo(temp->data);
@@ -468,19 +517,25 @@ void show_lotInfo(lotNode *phLot)
 /***************************************************
 *对当前用户进行充值
 ****************************************************/
-int rechage_user(userInfo *temp)
+int Rechage(userInfo *temp)
 {
-    printf("请输入充值金额:\n");
-    temp->balance += (float)putInt();
+    temp->balance += (float)set_money();
     return 1;
 }
 
 /***************************************************
 *修改用户信息
 ***************************************************/
-int correct_userInfo(userNode *pUser)
-{
-    init_userInfo(pUser);
+int correct_userInfo(userNode *pHuser,userNode *pUser)
+{   
+    char userPwd[SIZE] = "";
+    set_userPwd(userPwd);
+    if(!strcmp(userPwd,pUser->data.userPwd)){
+        init_userInfo(pHuser,&pUser->data);
+    }
+    else
+        printf("请确认密码正确才允许修改数据\n");
+    return 1;
 }
 /****************************************************
 *注销用户
@@ -493,21 +548,15 @@ int del_user(userNode *phUser,userNode *pUser)
         if(strcmp(pCur->data.userID,pUser->data.userID)){
             //销毁用户彩票链表
             pPre->pNext = pCur->pNext;
-            lotNode *pHbuy = pUser->pHbuy;
+            lotNode *pHbuy = pUser->data.pFrist;
+            destory_lotInfo(pUser->data.pFrist);
             return 1;
         }
         pPre = pPre->pNext;
         pCur = pCur->pNext;
     }
-    
     return 0;
 }
-
-
-
-
-
-
 
 /***********************************************************
 *创建相关数据节点
@@ -520,7 +569,6 @@ adminNode *make_adminNode()
     adminNode *newNode = (adminNode*)malloc(ADMIN_NODE_LEN);
     if(NULL == newNode)
         newNode = (adminNode*)malloc(ADMIN_NODE_LEN);
-    memset(&newNode,'\0',ADMIN_INFO_LEN);
     newNode->pNext = NULL;
     return newNode;
 }
@@ -530,7 +578,6 @@ lotNode *make_lotNode()
     lotNode *newNode = (lotNode*)malloc(LOT_NODE_LEN);
     if(NULL == newNode)
         newNode = (lotNode*)malloc(LOT_NODE_LEN);
-    memset(&newNode,'\0',LOT_INFO_LEN);
     newNode->pNext = NULL;
     return newNode;
 }
@@ -540,14 +587,13 @@ userNode *make_userNode()
     userNode * newNode = (userNode*)malloc(USER_NODE_LEN);
     if(NULL == newNode)
         newNode = (userNode*)malloc(USER_NODE_LEN);
-    memset(&newNode,'\0',USER_INFO_LEN);
     newNode->pNext = NULL;
     return newNode;
 }
 
-lotNode *lotInfoReadFromFile()
+lotNode *lotInfoReadFromFile(char *filename)
 {
-    FILE fpr = fopen("../lotInfo.dat","r");
+    FILE *fpr = fopen(filename,"a+");
     if(NULL == fpr){
         perror("open error");
         return NULL;
@@ -558,7 +604,7 @@ lotNode *lotInfoReadFromFile()
     {
         newNode->pNext = pHlot->pNext;
         pHlot->pNext = newNode;
-        lotNode *newNode = make_lotNode();
+        newNode = make_lotNode();
     }
     free(newNode);
     newNode = NULL;
@@ -566,13 +612,13 @@ lotNode *lotInfoReadFromFile()
     return pHlot;
 }
 
-void lotInfoWriteToFile(lotNode *pHlot)
+void lotInfoWriteToFile(lotNode *pHlot,char *filename)
 {
     if(NULL == pHlot){
-        printf("the link is empty!\n");
+        printf("%s the link is empty!\n",__func__);
         return;
     }
-    FILE fpw = fopen("../lotInfo.dat","w");
+    FILE *fpw = fopen(filename,"w");
     if(NULL == fpw){
         perror("open error");
         return;
@@ -591,7 +637,7 @@ void lotInfoWriteToFile(lotNode *pHlot)
 
 adminNode *adminInfoReadFromFile()
 {
-    FILE fpr = fopen("../adminInfo.dat","r");
+    FILE *fpr = fopen("./adminInfo.dat","r");
     if(NULL == fpr){
         perror("open error");
         return NULL;
@@ -612,11 +658,11 @@ adminNode *adminInfoReadFromFile()
 
 void adminInfoWriteToFile(adminNode *pHadmin)
 {
-    if(NULL != pHadmin){
-        printf("%s the link is empty!\n");
+    if(NULL == pHadmin){
+        printf("%s the link is empty!\n",__func__);
         return;
     }
-    FILE fpw = fopen("../adminInfo.dat","w");
+    FILE *fpw = fopen("./adminInfo.dat","w");
     if(NULL == fpw){
         perror("open error");
         return;
@@ -636,18 +682,18 @@ void adminInfoWriteToFile(adminNode *pHadmin)
 
 userNode *userInfoReadFromFile()
 {
-    FILE fpr = fopen("../userInfo.dat","r");
+    FILE *fpr = fopen("./userInfo.dat","r");
     if(NULL == fpr){
         perror("open error");
         return NULL;
     }
-    userNode pHuser = make_userNode();
-    userNode newNode = make_userNode();
+    userNode *pHuser = make_userNode();
+    userNode *newNode = make_userNode();
     while(fread(&newNode->data,USER_INFO_LEN,1,fpr) > 0)
     {
         newNode->pNext = pHuser->pNext;
         pHuser->pNext = newNode;
-        userNode newNode =make_userNode();
+        newNode = make_userNode();
     }
     free(newNode);
     newNode = NULL;
@@ -661,7 +707,7 @@ void userInfoWriteToFile(userNode *pHuser)
         printf("the link is empty!");
         return;
     }
-    FILE fpw = fopen("..userInfo.dat","w");
+    FILE *fpw = fopen("./userInfo.dat","w");
     if(NULL == fpw){
         perror("open error");
         return;
@@ -679,18 +725,52 @@ void userInfoWriteToFile(userNode *pHuser)
     return;
 }
 
-void destory_adminInfo(adminNode pHadmin)
+void destory_adminInfo(adminNode *pHadmin)
 {
-
+    if(NULL == pHadmin)
+    {
+        printf("the link is empty!\n");
+        return;
+    }
+    adminNode *temp = NULL;
+    while(NULL != pHadmin){
+        temp = pHadmin;
+        pHadmin = pHadmin->pNext;
+        free(temp);
+    }
+    temp = NULL;
     return;
 }
 void destory_lotInfo(lotNode *pHlot)
 {
-
+    if(NULL != pHlot){
+        printf("the link is empty!\n");
+        return;
+    }
+    lotNode *temp = NULL;
+    while(NULL != temp)
+    {
+        temp = pHlot;
+        pHlot = pHlot->pNext;
+        free(temp);
+    }
+    temp = NULL;
     return;
 }
 void destory_userInfo(userNode *pHuser)
-{
-
+{   
+    if(NULL == pHuser)
+    {
+        printf("the link is empty!\n");
+        return;
+    }
+    userNode *temp = NULL;
+    while(NULL != pHuser){
+        temp = pHuser;
+        pHuser = pHuser->pNext;
+        destory_lotInfo(temp->data.pFrist);
+        free(temp);
+    }
+    temp = NULL;
     return;
 }
